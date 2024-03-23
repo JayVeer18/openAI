@@ -1,0 +1,2 @@
+# openAI
+Exploring OpenAi APIs
