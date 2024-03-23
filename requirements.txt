@@ -5,3 +5,4 @@ openpyxl
 langchain_community
 langchain-openai
 langchain
+faiss-cpu

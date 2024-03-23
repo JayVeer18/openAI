@@ -1,48 +1,37 @@
-from langchain_openai import ChatOpenAI
-from langchain.prompts import PromptTemplate
-from langchain.chains import load_summarize_chain, AnalyzeDocumentChain
-from langchain_community.callbacks import get_openai_callback
+''' Install all the dependent libraries mentioned in requirements.txt file 
+        pip install -r requirements.txt
+'''
 
-class Summarizer:
-    def __init__(self, model_name, api_key, chain_type):
-        self.final_prompt = self._create_prompt("""Write a detailed analytical summary of the following text delimited by triple backquotes, by including all the necessary data along with trends and explanation. 
-                            ```{text}``` SUMMARY: """,input_variables=["text"])
-        self.intermitent_prompt = self._create_prompt("""Please provide a detailed analytical summary of the following text by including all the necessary data along with trends and explanation.
-                    TEXT: {text} SUMMARY: """,input_variables=["text"])
-        
-        self.llm = ChatOpenAI(model_name=model_name, api_key=api_key)
-        self.chain = self._load_summarize_chain(chain_type)
+import streamlit as st
+from streamlit_extras.add_vertical_space import add_vertical_space
+from DocumentSummarizer.langchain_summarizer import Summarizer
+from file_loader import FileLoader
 
-    def _create_prompt(self, template, input_variables):
-        return PromptTemplate(template=template, input_variables=input_variables)
+# Sidebar contents
+with st.sidebar:
+    st.title('Summarizer: Unlocking Wisdom from Documents')
+    st.markdown('''
+    ## About
+    This smart chatbot is powered by:
+    - [Streamlit](https://streamlit.io/)
+    - [LangChain](https://python.langchain.com/)
+    - [OpenAI](https://platform.openai.com/docs/models) LLM model 
+    ''')
+    add_vertical_space(5)
 
-    def _load_summarize_chain(self, chain_type:str):
-        if chain_type == 'refine':
-            return load_summarize_chain(llm=self.llm, chain_type="refine", return_intermediate_steps=True,
-                                        question_prompt=self.intermitent_prompt, 
-                                        refine_prompt=self.final_prompt)
-        elif chain_type == 'map_reduce':
-            return load_summarize_chain(llm=self.llm, chain_type='map_reduce', return_intermediate_steps=True,
-                                            map_prompt=self.intermitent_prompt, 
-                                            combine_prompt=self.final_prompt)
-        else :
-            return load_summarize_chain(llm=self.llm, chain_type='stuff', prompt=self.final_prompt)
-    
-    def invoke(self, content):
-        if isinstance(content, str):
-            # Handle single document
-            summary_chain = AnalyzeDocumentChain(combine_docs_chain=self.chain)
-            with get_openai_callback() as cb:
-                summary = summary_chain.invoke({"input_document": content})
-                print(cb)
-            return summary.get('output_text')
+def main():
+    api_key = st.text_input("Enter your OpenAI api key...")
+    if api_key:
+        file = st.file_uploader("Upload your file",type=['pdf','xlsx','csv','xls'])
+
+        if file is not None:
+            name_with_Extension = file.name.split('.')
+            file_name = name_with_Extension[0]
+            file_type = name_with_Extension[-1]
+            with st.spinner("Summarizing... please wait..."), st.chat_message("assistant"):
+                    content = FileLoader(file, file_type).load_and_split()
+                    summarizer = Summarizer(model_name="gpt-3.5-turbo", api_key=api_key, chain_type="stuff")
+                    st.write(summarizer.invoke(content))
         
-        elif isinstance(content, list):
-            # Handle list of documents
-            with get_openai_callback() as cb:
-                summary = self.chain.invoke({"input_documents": content})
-                print(cb)
-            return summary.get('output_text')
-        
-        else:
-            raise ValueError("Invalid input type. Expected str or list.")    
+if __name__ == '__main__':
+    main()
