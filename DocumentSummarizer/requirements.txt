@@ -1,0 +1,7 @@
+streamlit
+streamlit-extras
+pypdf
+openpyxl
+langchain_community
+langchain-openai
+langchain
