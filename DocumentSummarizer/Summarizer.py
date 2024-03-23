@@ -4,7 +4,7 @@
 
 import streamlit as st
 from streamlit_extras.add_vertical_space import add_vertical_space
-from DocumentSummarizer.langchain_summarizer import Summarizer
+from langchain_summarizer import Summarizer
 from file_loader import FileLoader
 
 # Sidebar contents

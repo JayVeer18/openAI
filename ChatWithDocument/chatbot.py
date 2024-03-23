@@ -5,7 +5,7 @@
 import streamlit as st
 from streamlit_extras.add_vertical_space import add_vertical_space
 from file_loader import FileLoader
-from chatWithDocument.langchain_chatbot import Chatbot
+from langchain_chatbot import Chatbot
 
 # Sidebar contents
 with st.sidebar:
