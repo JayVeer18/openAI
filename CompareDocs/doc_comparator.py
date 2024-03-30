@@ -7,7 +7,7 @@ sys.path.append(r'..\openAI')
 import streamlit as st
 from streamlit_extras.add_vertical_space import add_vertical_space
 from file_loader import FileLoader
-from ChatWithDocument.langchain_chatbot import Chatbot
+from CompareDocs.langchain_docs_comparator import DocComparator
 
 # Sidebar contents
 with st.sidebar:
@@ -21,14 +21,16 @@ with st.sidebar:
     ''')
     add_vertical_space(5)
 
-def chat_with_document(chatbot: Chatbot):  
-    if query := st.chat_input("Ask questions about your file"):
+def chat_with_document(doc_comparator: DocComparator):  
+    print('chatting with doc')
+    if query := st.chat_input("Ask questions about your files, please mention the file names"):
+        print(query)
         st.session_state.messages.append({"role": "user", "content": query})
         with st.chat_message("user"):
             st.markdown(query)
         
         with st.spinner("Querying... please wait..."), st.chat_message("assistant"):
-                response = chatbot.invoke(query)
+                response = doc_comparator.invoke(query)
                 st.markdown(response)
         st.session_state.messages.append({"role": "assistant", "content": response})
 
@@ -43,16 +45,19 @@ def display_chat_history():
 def main():
     api_key = st.text_input("Enter your OpenAI api key...")
     if api_key:
-        file = st.file_uploader("Upload your file",type=['pdf','xlsx','csv','xls'])
+        uploaded_files = st.file_uploader("Upload your files",type=['pdf','xlsx','csv','xls'],accept_multiple_files=True)
+        # button_pressed = st.button('Click to Start Comparing the documents')
+        doc_chunks = []
+        if uploaded_files:
+            for uploaded_file in uploaded_files:
+                name_with_Extension = uploaded_file.name.split('.')
+                file_name = name_with_Extension[0]
+                file_type = name_with_Extension[-1]
+                doc_chunks.append({'file_name':file_name, 'chunks':FileLoader(uploaded_file, file_type).load_and_split()})
 
-        if file is not None:
-            name_with_Extension = file.name.split('.')
-            file_name = name_with_Extension[0]
-            file_type = name_with_Extension[-1]
-            doc_chunks = FileLoader(file, file_type).load_and_split()
-            chatbot = Chatbot(model_name="gpt-3.5-turbo", api_key=api_key, file_name=file_name, file_content=doc_chunks, chain_type='RAG')
+            doc_comparator = DocComparator(model_name="gpt-3.5-turbo", api_key=api_key, files=doc_chunks)
             display_chat_history()
-            chat_with_document(chatbot)
+            chat_with_document(doc_comparator)
 
 if __name__ == '__main__':
     main()
