@@ -1,0 +1,12 @@
+python-dotenv
+streamlit
+streamlit-extras
+pypdf
+rapidocr-onnxruntime
+openpyxl
+langchain_community
+langchain-openai
+langchain
+faiss-cpu
+youtube-transcript-api
+reportlab
